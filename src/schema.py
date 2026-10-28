@@ -1,15 +1,19 @@
-"""GraphQL schema for reminder lists and the existing health query."""
+"""GraphQL schema for reminder lists, reminders, and the health query."""
 
 from typing import Any
 
-from graphql import GraphQLSchema, build_schema, graphql_sync
+from graphql import GraphQLObjectType, GraphQLSchema, build_schema, graphql_sync
 
 from src.resolvers import (
     resolve_add_list,
+    resolve_add_reminder,
+    resolve_complete_reminder,
     resolve_delete_list,
     resolve_health,
     resolve_list,
+    resolve_list_reminders,
     resolve_lists,
+    resolve_reminders,
     resolve_rename_list,
 )
 
@@ -32,6 +36,7 @@ type Reminder {
 type Query {
   lists: [ReminderList!]!
   list(id: String!): ReminderList
+  reminders(listId: String!, includeDone: Boolean = false): [Reminder!]!
   health: HealthStatus!
 }
 
@@ -39,6 +44,8 @@ type Mutation {
   addList(name: String!): ReminderList!
   renameList(id: String!, name: String!): ReminderList!
   deleteList(id: String!): Boolean!
+  addReminder(listId: String!, text: String!, description: String, dueAt: String!): Reminder!
+  completeReminder(id: String!): Reminder!
 }
 
 type HealthStatus {
@@ -56,10 +63,17 @@ def build_graphql_schema() -> GraphQLSchema:
         raise RuntimeError("Schema is missing query or mutation type")
     query.fields["lists"].resolve = resolve_lists
     query.fields["list"].resolve = resolve_list
+    query.fields["reminders"].resolve = resolve_reminders
     query.fields["health"].resolve = resolve_health
     mutation.fields["addList"].resolve = resolve_add_list
     mutation.fields["renameList"].resolve = resolve_rename_list
     mutation.fields["deleteList"].resolve = resolve_delete_list
+    mutation.fields["addReminder"].resolve = resolve_add_reminder
+    mutation.fields["completeReminder"].resolve = resolve_complete_reminder
+    reminder_list = graphql_schema.get_type("ReminderList")
+    if not isinstance(reminder_list, GraphQLObjectType):
+        raise RuntimeError("Schema is missing ReminderList type")
+    reminder_list.fields["reminders"].resolve = resolve_list_reminders
     return graphql_schema
 
 
