@@ -11,12 +11,6 @@ def test_health_default():
     assert result == {"status": "ok"}
 
 
-def test_health_returns_ok_status() -> None:
-    """Verify health() returns {"status": "ok"}."""
-    result = health()
-    assert result == {"status": "ok"}
-
-
 def test_health_with_explicit_status():
     """AC4: Health function uses validated status."""
     assert health("down") == {"status": "down"}
